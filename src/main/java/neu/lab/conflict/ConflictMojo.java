@@ -53,6 +53,9 @@ public abstract class ConflictMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.directory}", required = true)
     public File buildDir;
 
+    @Parameter(defaultValue = "${project.build.testOutputDirectory}", readonly = true)
+    public File testDir;
+
     @Component
     public ArtifactFactory factory;
 
@@ -93,6 +96,9 @@ public abstract class ConflictMojo extends AbstractMojo {
     @Parameter(property = "resultPath")
     public String resultPath = "." + File.separator;
 
+    @Parameter(property = "textPath")
+    public String textPath;
+
     // 设置是否细分1234等级
     @Parameter(property = "subdivisionLevel", defaultValue = "false")
     public boolean subdivisionLevel;
@@ -130,6 +136,7 @@ public abstract class ConflictMojo extends AbstractMojo {
         Conf.callConflict = callConflict;
         Conf.findAllpath = findAllPath;
         Conf.outDir = resultPath;
+        Conf.textPath = textPath;
         Conf.append = append;
         Conf.runTime = runTime;
         Conf.printDiff = printDiff;

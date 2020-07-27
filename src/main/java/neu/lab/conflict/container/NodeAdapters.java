@@ -1,10 +1,14 @@
 package neu.lab.conflict.container;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.shared.dependency.tree.DependencyNode;
 
 import neu.lab.conflict.util.MavenUtil;
@@ -109,6 +113,25 @@ public class NodeAdapters {
 
 	public List<NodeAdapter> getAllNodeAdapter() {
 		return container;
+	}
+
+	public String getNodeClassPath(String groupId, String artifactId, String version) {
+		StringBuilder sb = new StringBuilder();
+		for (NodeAdapter node : container) {
+			if (node.isNodeSelected() && node.getGroupId().equals(groupId) && node.getArtifactId().equals(artifactId)) {
+				sb.append(node.getNodePath());
+				Artifact artifact = MavenUtil.i().getArtifact(node.getGroupId(), node.getArtifactId(), version, node.getType(), node.getClassifier(), node.getClassifier());
+				try {
+					MavenUtil.i().resolve(artifact);
+				} catch (ArtifactNotFoundException e) {
+					e.printStackTrace();
+				} catch (ArtifactResolutionException e) {
+					e.printStackTrace();
+				}
+				sb.append(File.pathSeparator + artifact.getFile().getAbsolutePath());
+			}
+		}
+		return sb.toString();
 	}
 
 }

@@ -593,7 +593,7 @@ public class DepJarJRisk {
         System.out.println("运行时间 : " + (endTime - startTime) + "ms");
     }
 
-    public void findSemiMethods(String groupId, String artifactId, String originalVer, String changeVer) throws IOException {
+    public static void findSemiMethods(String groupId, String artifactId, String originalVer, String changeVer) throws IOException {
         long startTime = System.currentTimeMillis();
         MavenUtil.i().setMojo(new CountProjectMojo());
         List<String> JarFilePath = new ArrayList<>();
@@ -620,6 +620,13 @@ public class DepJarJRisk {
                 artifactId.replace(".", "/") + File.separator +
                 version + File.separator +
                 artifactId + "-" + version + ".jar";
+    }
+
+    public void deleteCommonMethods() {
+        File file = new File(Conf.outDir + "commonMethods.txt");
+        if (file.exists()) {
+            file.delete();
+        }
     }
 
 //    public static String getRepositoryJarPath(String groupId, String artifactId, String version) {

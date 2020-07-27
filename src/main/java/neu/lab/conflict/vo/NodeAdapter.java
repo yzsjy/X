@@ -1,5 +1,6 @@
 package neu.lab.conflict.vo;
 
+import java.io.File;
 import java.util.*;
 
 import neu.lab.conflict.util.Conf;
@@ -15,6 +16,7 @@ import neu.lab.conflict.container.DepJars;
 import neu.lab.conflict.container.NodeAdapters;
 import neu.lab.conflict.util.ClassifierUtil;
 import neu.lab.conflict.util.MavenUtil;
+import org.omg.CORBA.PUBLIC_MEMBER;
 
 /**
  * @author w
@@ -91,7 +93,7 @@ public class NodeAdapter {
 		return null != node.getPremanagedVersion();
 	}
 
-	protected String getType() {
+	public String getType() {
 		return node.getArtifact().getType();
 	}
 
@@ -378,5 +380,16 @@ public Set<String> getParentJarClassPath(boolean includeSelf) {
 			father = father.getParent();
 		}
 		return depth;
+	}
+
+	public String getNodePath() {
+		StringBuilder sb = new StringBuilder();
+		NodeAdapter father = getParent();
+		while (null != father) {
+			sb.insert(0, father.getFilePath().iterator().next() + File.pathSeparator);
+			father = father.getParent();
+		}
+		sb.insert(0, MavenUtil.i().getTestBuildDir().getAbsolutePath() + File.pathSeparator);
+		return sb.toString();
 	}
 }

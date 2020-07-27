@@ -45,6 +45,8 @@ public class Conf {
 
     public static String outDir;
 
+    public static String textPath;
+
     public static boolean CLASS_MISSING = false;
 
     public static boolean append;

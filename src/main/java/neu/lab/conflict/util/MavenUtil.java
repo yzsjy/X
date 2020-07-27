@@ -135,6 +135,10 @@ public class MavenUtil {
         return mojo.buildDir;
     }
 
+    public File getTestBuildDir() {
+        return mojo.testDir;
+    }
+
     public List<String> getSrcPaths() {
         List<String> srcPaths = new ArrayList<String>();
         if (this.mojo == null) {
