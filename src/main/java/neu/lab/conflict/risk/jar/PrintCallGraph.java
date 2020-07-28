@@ -155,6 +155,23 @@ public class PrintCallGraph {
         }
     }
 
+    public void writeToTextFile() {
+        try {
+            PrintWriter printer = new PrintWriter(new BufferedWriter(new FileWriter(new File(Conf.outDir + "Result.txt"), true)));
+            printer.println("Project Path : " + MavenUtil.i().getBaseDir().getAbsolutePath());
+            printer.println("Project Info : " + MavenUtil.i().getProjectInfo());
+            printer.println("Change artifact" + groupId + ":" + artifactId);
+            printer.println("Original version : " + originalVersion);
+            printer.println("Change version : " + changeVersion);
+            printer.println("Risk API : " + riskAPI);
+            printer.println("==============================================================================");
+            printer.println();
+            printer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void printPath(MySortedMap<Integer, Record4path> dis2records, String riskMethod) {
         try {
 
