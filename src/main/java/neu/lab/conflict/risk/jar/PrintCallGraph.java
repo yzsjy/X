@@ -10,9 +10,10 @@ import neu.lab.conflict.soot.MethodPathCGTF;
 import neu.lab.conflict.util.Conf;
 import neu.lab.conflict.util.MavenUtil;
 import neu.lab.conflict.util.MySortedMap;
+import neu.lab.conflict.util.PomOperation;
 import neu.lab.conflict.vo.DepJar;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
+import neu.lab.conflict.vo.DependencyInfo;
+import org.dom4j.Element;
 
 import java.io.*;
 import java.util.*;
@@ -26,12 +27,17 @@ public class PrintCallGraph {
     private String changeVersion;
     private static Map<String, Integer> riskMethods;
     private static Map<String, Integer> pathMethods;
+    private Set<String> dependencyInPom;
+    private String riskAPI;
+    private int diffNum = 0;
+    private int pathlen = 100;
 
     public PrintCallGraph() {
         getDepInfo();
         originalVersion = getUsedVersion(groupId, artifactId);
         riskMethods = new HashMap<String, Integer>();
         pathMethods = new HashMap<String, Integer>();
+        dependencyInPom = new HashSet<String>();
     }
 
     public String getUsedVersion(String groupId, String artifactId) {
@@ -67,7 +73,7 @@ public class PrintCallGraph {
         }
     }
 
-    public static void findSemiMethods(String groupId, String artifactId, String originalVer, String changeVer) throws IOException {
+    public static void findSemiMethods(String groupId, String artifactId, String originalVer, String changeVer) {
         long startTime = System.currentTimeMillis();
         MavenUtil.i().setMojo(new CountProjectMojo());
         List<String> JarFilePath = new ArrayList<>();
@@ -86,8 +92,10 @@ public class PrintCallGraph {
         MavenUtil.i().getLog().info("Run Time : " + (endTime - startTime) + "ms");
     }
 
-    public void printRiskCallGraph(String riskMethod, String entryClass) throws IOException {
+    public void printRiskCallGraph(String riskMethod, String entryClass) {
         findSemiMethods(groupId, artifactId, originalVersion, changeVersion);
+        DependencyInfo dependencyInfo = new DependencyInfo(groupId, artifactId, changeVersion);
+        generateTestClassPath(dependencyInfo);
         String classPaths = NodeAdapters.i().getNodeClassPath(groupId, artifactId, changeVersion);
         String[] classPath = classPaths.split(":");
         MethodPathCGTF methodPathCGTF = new MethodPathCGTF(entryClass, riskMethods.keySet());
@@ -105,19 +113,43 @@ public class PrintCallGraph {
                 }
             }
         }
+        printPath(dis2records, riskMethod);
         if (dis2records.size() > 0) {
             for (Record4path record : dis2records.flat()) {
                 if (record.getPathStr().split("\\n")[0].contains(riskMethod)) {
                     String endMethod = getEndMethod(record.getPathStr());
                     if (riskMethods.containsKey(endMethod)) {
-                        if (pathMethods.containsKey(endMethod)) {
-                            if (record.getPathlen() < pathMethods.get(endMethod)) {
+                        Integer pathlen = pathMethods.get(endMethod);
+                        if (pathlen != null) {
+                            if (record.getPathlen() < pathlen) {
                                 pathMethods.put(endMethod, record.getPathlen());
                             }
                         } else {
                             pathMethods.put(endMethod, record.getPathlen());
                         }
                     }
+                }
+            }
+        }
+        PomOperation.i().backupPomCopy();
+        PomOperation.i().deletePomCopy();
+    }
+
+    public void findRiskAPI(String riskMethod, String entryClass) {
+        printRiskCallGraph(riskMethod, entryClass);
+        for (String pathMethod : pathMethods.keySet()) {
+            int tempNum = riskMethods.get(pathMethod);
+            int tempLen = pathMethods.get(pathMethod);
+            if (tempNum >= diffNum) {
+                if (tempLen < pathlen) {
+                    diffNum = tempNum;
+                    pathlen = tempLen;
+                    riskAPI = pathMethod;
+                }
+                if ((tempLen - pathlen) < (tempNum - diffNum)) {
+                    diffNum = tempNum;
+                    pathlen = tempLen;
+                    riskAPI = pathMethod;
                 }
             }
         }
@@ -158,8 +190,16 @@ public class PrintCallGraph {
         return mthds[mthds.length - 1];
     }
 
+//    public static String getRepositoryJarPath(String groupId, String artifactId, String version) {
+//        return "/Users/yzsjy/Maven/Respository/" +
+//                groupId.replace(".", "/") + File.separator +
+//                artifactId.replace(".", "/") + File.separator +
+//                version + File.separator +
+//                artifactId + "-" + version + ".jar";
+//    }
+
     public static String getRepositoryJarPath(String groupId, String artifactId, String version) {
-        return "/Users/yzsjy/Maven/Respository/" +
+        return MavenUtil.i().getMvnRep() +
                 groupId.replace(".", "/") + File.separator +
                 artifactId.replace(".", "/") + File.separator +
                 version + File.separator +
@@ -173,12 +213,30 @@ public class PrintCallGraph {
         }
     }
 
-//    public static String getRepositoryJarPath(String groupId, String artifactId, String version) {
-//        return MavenUtil.i().getMvnRep() +
-//                groupId.replace(".", "/") + File.separator +
-//                artifactId.replace(".", "/") + File.separator +
-//                version + File.separator +
-//                artifactId + "-" + version + ".jar";
-//    }
+    public void generateTestClassPath(DependencyInfo dependencyInfo) {
+        readPom();
+        boolean backupPom = PomOperation.i().backupPom();
+        if (backupPom) {
+            if (hasInCurrentPom(dependencyInfo)) {
+                PomOperation.i().updateDependencyVersion(dependencyInfo);
+                MavenUtil.i().getLog().info("success update dependency version for " + dependencyInfo.getName());
+            } else {
+                PomOperation.i().addDependency(dependencyInfo);
+                MavenUtil.i().getLog().info("success add dependency for " + dependencyInfo.getName());
+            }
+        }
+    }
 
+    public void readPom() {
+        List<Element> dependencyList = PomOperation.i().readPomDependencies();
+        for (Element element : dependencyList) {
+//            DependencyInfo dependencyInfo = new DependencyInfo(element.element("groupId").getText(), element.element("artifactId").getText());
+            dependencyInPom.add(element.element("groupId").getText() + ":" + element.element("artifactId").getText());
+//            dependencyInfoList.add(dependencyInfo);
+        }
+    }
+
+    private boolean hasInCurrentPom(DependencyInfo dependencyInfo) {
+        return dependencyInPom.contains(dependencyInfo.getGroupId() + ":" + dependencyInfo.getArtifactId());
+    }
 }

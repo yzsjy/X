@@ -41,6 +41,10 @@ public class DependencyInfo {
 		this.version = version;
 	}
 
+	public String getName() {
+		return groupId + ":" + artifactId;
+	}
+
 	public void addDependencyElement(Element dependency) {
 		dependency.addElement("artifactId").setText(artifactId);
 		dependency.addElement("groupId").setText(groupId);
