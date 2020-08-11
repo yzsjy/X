@@ -2,7 +2,9 @@ package neu.lab.conflict.risk.jar;
 
 import gumtree.spoon.diff.operations.Operation;
 import neu.lab.conflict.CountProjectMojo;
+import neu.lab.conflict.container.ArtifactNodes;
 import neu.lab.conflict.container.DepJars;
+import neu.lab.conflict.container.NewNodeAdapters;
 import neu.lab.conflict.container.NodeAdapters;
 import neu.lab.conflict.graph.*;
 import neu.lab.conflict.soot.JarAna;
@@ -13,18 +15,25 @@ import neu.lab.conflict.util.MySortedMap;
 import neu.lab.conflict.util.PomOperation;
 import neu.lab.conflict.vo.DepJar;
 import neu.lab.conflict.vo.DependencyInfo;
+import neu.lab.conflict.vo.ExcelDataVO;
+import neu.lab.conflict.vo.NodeAdapter;
+import neu.lab.conflict.writer.ExcelWriter;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.artifact.resolver.ArtifactResolutionException;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.dom4j.Element;
 
 import java.io.*;
 import java.util.*;
 
 public class PrintCallGraph {
-
-    private static int[][] compValue;
-    private String groupId;
-    private String artifactId;
-    private String originalVersion;
-    private String changeVersion;
+    private static String groupId;
+    private static String artifactId;
+    private static String originalVersion;
+    private static String changeVersion;
+    private static String riskMethod;
+    private static String entryClass;
     private static Map<String, Integer> riskMethods;
     private static Map<String, Integer> pathMethods;
     private Set<String> dependencyInPom;
@@ -33,7 +42,12 @@ public class PrintCallGraph {
     private int pathlen = 100;
 
     public PrintCallGraph() {
-        getDepInfo();
+//        getDepInfo();
+        groupId = Conf.testGroupId;
+        artifactId = Conf.testArtifactId;
+        changeVersion = Conf.changeVersion;
+        riskMethod = Conf.testMethod;
+        entryClass = Conf.testClass;
         originalVersion = getUsedVersion(groupId, artifactId);
         riskMethods = new HashMap<String, Integer>();
         pathMethods = new HashMap<String, Integer>();
@@ -73,30 +87,35 @@ public class PrintCallGraph {
         }
     }
 
-    public static void findSemiMethods(String groupId, String artifactId, String originalVer, String changeVer) {
+    public static void findSemiMethods() {
         long startTime = System.currentTimeMillis();
-        MavenUtil.i().setMojo(new CountProjectMojo());
+//        MavenUtil.i().setMojo(new CountProjectMojo());
         List<String> JarFilePath = new ArrayList<>();
-        JarFilePath.add(getRepositoryJarPath(groupId, artifactId, originalVer));
-        DepJar usedDepJar = new DepJar(groupId, artifactId, originalVer, "", JarFilePath);
+        JarFilePath.add(getDepJarPath(groupId, artifactId, originalVersion));
+//        JarFilePath.add(getRepositoryJarPath(groupId, artifactId, originalVersion));
+        DepJar usedDepJar = new DepJar(groupId, artifactId, originalVersion, "", JarFilePath);
         List<String> conflictJarFilePath = new ArrayList<>();
-        conflictJarFilePath.add(getRepositoryJarPath(groupId, artifactId, changeVer));
-        DepJar conflictDepJar = new DepJar(groupId, artifactId, changeVer, "", conflictJarFilePath);
+        conflictJarFilePath.add(getDepJarPath(groupId, artifactId, changeVersion));
+//        conflictJarFilePath.add(getRepositoryJarPath(groupId, artifactId, changeVersion));
+        DepJar conflictDepJar = new DepJar(groupId, artifactId, changeVersion, "", conflictJarFilePath);
         DepJarJRisk depJarJRisk = new DepJarJRisk(conflictDepJar, usedDepJar);
         Map<String, List<Operation>> riskMethodDiffsMap = depJarJRisk.getAllSemantemeMethodForDifferences();
         MavenUtil.i().getLog().info("Risk method size : " + riskMethodDiffsMap.keySet().size());
         for (String method : riskMethodDiffsMap.keySet()) {
             riskMethods.put(method, riskMethodDiffsMap.get(method).size());
         }
+        MavenUtil.i().getLog().info("Map riskMethods size : " + riskMethods.keySet().size());
         long endTime = System.currentTimeMillis();
         MavenUtil.i().getLog().info("Run Time : " + (endTime - startTime) + "ms");
     }
 
-    public void printRiskCallGraph(String riskMethod, String entryClass) {
-        findSemiMethods(groupId, artifactId, originalVersion, changeVersion);
+    public void printRiskCallGraph() {
+        findSemiMethods();
+        PomOperation.i().mvnTest();
         DependencyInfo dependencyInfo = new DependencyInfo(groupId, artifactId, changeVersion);
         generateTestClassPath(dependencyInfo);
         String classPaths = NodeAdapters.i().getNodeClassPath(groupId, artifactId, changeVersion);
+        MavenUtil.i().getLog().info("ClassPath : " + classPaths);
         String[] classPath = classPaths.split(":");
         MethodPathCGTF methodPathCGTF = new MethodPathCGTF(entryClass, riskMethods.keySet());
         Graph4path graph4path = (Graph4path) JarAna.i().getGraph(classPath, methodPathCGTF);
@@ -135,8 +154,8 @@ public class PrintCallGraph {
         PomOperation.i().deletePomCopy();
     }
 
-    public void findRiskAPI(String riskMethod, String entryClass) {
-        printRiskCallGraph(riskMethod, entryClass);
+    public boolean findRiskAPI() {
+        printRiskCallGraph();
         for (String pathMethod : pathMethods.keySet()) {
             int tempNum = riskMethods.get(pathMethod);
             int tempLen = pathMethods.get(pathMethod);
@@ -153,6 +172,24 @@ public class PrintCallGraph {
                 }
             }
         }
+        if (riskAPI == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public static String getDepJarPath(String groupId, String artifactId, String version) {
+        NodeAdapter node = NodeAdapters.i().getNode(groupId, artifactId);
+        Artifact artifact = MavenUtil.i().getArtifact(groupId, artifactId, version, node.getType(), node.getClassifier(), node.getScope());
+        try {
+            MavenUtil.i().resolve(artifact);
+        } catch (ArtifactNotFoundException e) {
+            e.printStackTrace();
+        } catch (ArtifactResolutionException e) {
+            e.printStackTrace();
+        }
+        return artifact.getFile().getAbsolutePath();
     }
 
     public void writeToTextFile() {
@@ -163,7 +200,10 @@ public class PrintCallGraph {
             printer.println("Change artifact" + groupId + ":" + artifactId);
             printer.println("Original version : " + originalVersion);
             printer.println("Change version : " + changeVersion);
+            printer.println("Risk Method : <" + entryClass + "." + riskMethod + ">");
             printer.println("Risk API : " + riskAPI);
+            printer.println("Difference Number : " + riskMethods.get(riskAPI));
+            printer.println("Path Length : " + pathMethods.get(riskAPI));
             printer.println("==============================================================================");
             printer.println();
             printer.close();
@@ -172,9 +212,55 @@ public class PrintCallGraph {
         }
     }
 
+    public void writeToExcelFile() {
+        String projectName = MavenUtil.i().getName();
+        int star = 0;
+        int depNum = NewNodeAdapters.i().getContainer().size();
+        int avgNum = getAvgNum();
+        int testCase = 0;
+        String testAPI = entryClass + "." + riskMethod;
+        String riskMethod = riskAPI.replace("<", "").replace(">", "");
+        ExcelDataVO data = new ExcelDataVO(projectName, star, depNum, avgNum, testCase, groupId, artifactId, changeVersion, originalVersion, testAPI, riskMethod);
+        String filePath = Conf.outDir + "GrandTruth.xlsx";
+        File file = new File(filePath);
+        if (file.exists()) {
+            try {
+                FileInputStream inputStream = new FileInputStream(file);
+                Workbook workbook = ExcelWriter.getWorkBook(inputStream);
+                FileOutputStream outputStream = new FileOutputStream(file);
+                ExcelWriter.insertData(data, workbook);
+                workbook.write(outputStream);
+                outputStream.flush();
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                file.createNewFile();
+                Workbook workbook = ExcelWriter.exportData(data);
+                FileOutputStream fileOut = new FileOutputStream((filePath));
+                workbook.write(fileOut);
+                fileOut.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private int getAvgNum() {
+        int size = NewNodeAdapters.i().getContainer().size();
+        int count = 0;
+        for (ArtifactNodes artifactNodes : NewNodeAdapters.i().getContainer()) {
+            count += artifactNodes.getArtifactVersions().size();
+        }
+        return count/size;
+    }
+
     public void printPath(MySortedMap<Integer, Record4path> dis2records, String riskMethod) {
         try {
-
             if (dis2records.size() > 0) {
                 String fileName = MavenUtil.i().getProjectGroupId() + ":" + MavenUtil.i().getProjectArtifactId() + ":" + MavenUtil.i().getProjectVersion();
                 PrintWriter printer = new PrintWriter(new BufferedWriter(new FileWriter(Conf.outDir + fileName.replace('.', '_').replace(':', '_') + "_test.txt")));
@@ -207,21 +293,21 @@ public class PrintCallGraph {
         return mthds[mthds.length - 1];
     }
 
-//    public static String getRepositoryJarPath(String groupId, String artifactId, String version) {
-//        return "/Users/yzsjy/Maven/Respository/" +
-//                groupId.replace(".", "/") + File.separator +
-//                artifactId.replace(".", "/") + File.separator +
-//                version + File.separator +
-//                artifactId + "-" + version + ".jar";
-//    }
-
     public static String getRepositoryJarPath(String groupId, String artifactId, String version) {
-        return MavenUtil.i().getMvnRep() +
+        return "/Users/yzsjy/Maven/Respository/" +
                 groupId.replace(".", "/") + File.separator +
                 artifactId.replace(".", "/") + File.separator +
                 version + File.separator +
                 artifactId + "-" + version + ".jar";
     }
+
+//    public static String getRepositoryJarPath(String groupId, String artifactId, String version) {
+//        return MavenUtil.i().getMvnRep() +
+//                groupId.replace(".", "/") + File.separator +
+//                artifactId.replace(".", "/") + File.separator +
+//                version + File.separator +
+//                artifactId + "-" + version + ".jar";
+//    }
 
     public void deleteCommonMethods() {
         File file = new File(Conf.outDir + "commonMethods.txt");
@@ -241,6 +327,8 @@ public class PrintCallGraph {
                 PomOperation.i().addDependency(dependencyInfo);
                 MavenUtil.i().getLog().info("success add dependency for " + dependencyInfo.getName());
             }
+//            PomOperation.i().mvnPackage();
+            PomOperation.i().mvnTest();
         }
     }
 

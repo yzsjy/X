@@ -1,12 +1,16 @@
 package neu.lab.conflict.util;
 
 import neu.lab.conflict.vo.DependencyInfo;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -165,6 +169,36 @@ public class PomOperation {
             new File(POM_PATH_COPY).delete();
         }
         MavenUtil.i().getLog().info("success delete pom-copy.xml");
+    }
+
+    public boolean mvnTest() {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+        CommandLine  cmdLine = CommandLine.parse("mvn test");
+        DefaultExecutor executor = new DefaultExecutor();
+        int exitCode = -1;
+        try {
+            executor.setStreamHandler(streamHandler);
+            exitCode = executor.execute(cmdLine);
+        } catch (IOException e) {
+            MavenUtil.i().getLog().error("This project execute error : " + e.getMessage());
+        }
+        return exitCode == 0;
+    }
+
+    public boolean mvnPackage() {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+        CommandLine  cmdLine = CommandLine.parse("mvn package -Dmaven.test.skip=true");
+        DefaultExecutor executor = new DefaultExecutor();
+        int exitCode = -1;
+        try {
+            executor.setStreamHandler(streamHandler);
+            exitCode = executor.execute(cmdLine);
+        } catch (IOException e) {
+            MavenUtil.i().getLog().error("This project execute error : " + e.getMessage());
+        }
+        return exitCode == 0;
     }
 //    /**
 //     * copy empty dependency xml to target path

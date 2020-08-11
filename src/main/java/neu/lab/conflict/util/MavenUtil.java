@@ -64,6 +64,13 @@ public class MavenUtil {
         return null;
     }
 
+    public String getName() {
+        String path = getBaseDir().getAbsolutePath();
+        String tempPath = path.split("/unzip/")[1];
+        String name = tempPath.split("/pom.xml")[0];
+        return name;
+    }
+
     public void setMojo(ConflictMojo mojo) {
         this.mojo = mojo;
     }

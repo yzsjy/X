@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import neu.lab.conflict.container.*;
 import neu.lab.conflict.vo.NodeAdapter;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
@@ -19,10 +20,6 @@ import org.apache.maven.shared.dependency.tree.DependencyNode;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
 import org.apache.maven.shared.dependency.tree.DependencyTreeBuilderException;
 
-import neu.lab.conflict.container.AllCls;
-import neu.lab.conflict.container.DepJars;
-import neu.lab.conflict.container.NodeAdapters;
-import neu.lab.conflict.container.Conflicts;
 import neu.lab.conflict.util.Conf;
 import neu.lab.conflict.util.MavenUtil;
 import neu.lab.conflict.vo.DepJar;
@@ -96,6 +93,21 @@ public abstract class ConflictMojo extends AbstractMojo {
     @Parameter(property = "resultPath")
     public String resultPath = "." + File.separator;
 
+    @Parameter(property = "testGroupId")
+    public String testGroupId;
+
+    @Parameter(property = "testArtifactId")
+    public String testArtifactId;
+
+    @Parameter(property = "changeVersion")
+    public String changeVersion;
+
+    @Parameter(property = "testClass")
+    public String testClass;
+
+    @Parameter(property = "testMethod")
+    public String testMethod;
+
     @Parameter(property = "textPath")
     public String textPath;
 
@@ -121,6 +133,9 @@ public abstract class ConflictMojo extends AbstractMojo {
     @Parameter(property = "targetJar")
     public String targetJar;
 
+    @Parameter(property = "maxDependencyDepth", defaultValue = "2")
+    public int maxDependencyDepth;
+
     public int systemSize = 0;
 
     public long systemFileSize = 0;// byte
@@ -143,9 +158,12 @@ public abstract class ConflictMojo extends AbstractMojo {
         Conf.semanticsPrintNum = semanticsPrintNum;
         Conf.targetJar = targetJar;
         GlobalVar.useAllJar = useAllJar;
+        Conf.maxDependencyDepth = maxDependencyDepth;
+        initInputVar();
 
         // 初始化NodeAdapters
         NodeAdapters.init(root);
+        NewNodeAdapters.init(root);
 
         getNodePomPath();
 
@@ -157,6 +175,14 @@ public abstract class ConflictMojo extends AbstractMojo {
         AllCls.init(DepJars.i());
         // 初始化树中的版本冲突
         Conflicts.init(NodeAdapters.i());// version conflict in tree 初始化树中的版本冲突
+    }
+
+    public void initInputVar() {
+        Conf.testGroupId = testGroupId;
+        Conf.testArtifactId = testArtifactId;
+        Conf.changeVersion = changeVersion;
+        Conf.testClass = testClass;
+        Conf.testMethod = testMethod;
     }
 
     /**

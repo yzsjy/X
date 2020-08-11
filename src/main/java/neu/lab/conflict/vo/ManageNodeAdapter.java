@@ -81,7 +81,7 @@ public class ManageNodeAdapter extends NodeAdapter {
 		return null;
 	}
 
-	protected String getType() {
+	public String getType() {
 		return type;
 	}
 

@@ -73,6 +73,18 @@ public class Conf {
 
     // second level
     public static List<NodeAdapter> firstLevelNeedAddNodeList = new ArrayList<>();
+
+    public static String testGroupId;
+
+    public static String testArtifactId;
+
+    public static String changeVersion;
+
+    public static String testClass;
+
+    public static String testMethod;
+
+    public static int maxDependencyDepth;
 }
 
 //public class Conf {

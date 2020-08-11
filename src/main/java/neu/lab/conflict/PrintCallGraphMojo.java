@@ -1,5 +1,6 @@
 package neu.lab.conflict;
 
+import neu.lab.conflict.writer.PrintCallGraphWriter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 
@@ -7,6 +8,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 public class PrintCallGraphMojo extends ConflictMojo {
     @Override
     public void run() {
-
+//        new PrintCallGraphWriter().testClassPath();
+        new PrintCallGraphWriter().printRiskAPI();
     }
 }

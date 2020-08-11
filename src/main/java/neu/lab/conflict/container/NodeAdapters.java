@@ -128,10 +128,23 @@ public class NodeAdapters {
 				} catch (ArtifactResolutionException e) {
 					e.printStackTrace();
 				}
-				sb.append(File.pathSeparator + artifact.getFile().getAbsolutePath());
+				sb.append(artifact.getFile().getAbsolutePath());
 			}
 		}
 		return sb.toString();
+	}
+
+	public NodeAdapter getNode(String groupId, String artifactId) {
+		NodeAdapter targetNode = null;
+		for (NodeAdapter node : container) {
+			if (node.isNodeSelected()) {
+				if (node.getGroupId().equals(groupId) && node.getArtifactId().equals(artifactId)) {
+					targetNode = node;
+					break;
+				}
+			}
+		}
+		return targetNode;
 	}
 
 }
