@@ -47,7 +47,7 @@ public class PomOperation {
     public void addDependency(DependencyInfo dependencyInfo) {
         SAXReader reader = new SAXReader();
         try {
-            Document document = reader.read(POM_PATH_COPY);
+            Document document = reader.read(POM_PATH);
             Element rootElement = document.getRootElement();
             Element dependencies = rootElement.element("dependencies");
             if (dependencies == null) {
@@ -57,7 +57,7 @@ public class PomOperation {
             dependencyInfo.addDependencyElement(dependency);
             OutputFormat outputFormat = OutputFormat.createPrettyPrint();
             outputFormat.setEncoding("UTF-8");
-            XMLWriter writer = new XMLWriter(new FileWriter(POM_PATH), outputFormat);
+            XMLWriter writer = new XMLWriter(new FileWriter(POM_PATH_COPY), outputFormat);
             writer.write(document);
             writer.close();
         } catch (Exception e) {
@@ -68,7 +68,7 @@ public class PomOperation {
     public void updateDependencyVersion(DependencyInfo dependencyInfo) {
         SAXReader reader = new SAXReader();
         try {
-            Document document = reader.read(POM_PATH_COPY);
+            Document document = reader.read(POM_PATH);
             Element rootElement = document.getRootElement();
             Element dependencies = rootElement.element("dependencies");
             Iterator dependencyIterator = dependencies.elementIterator("dependency");
@@ -86,7 +86,7 @@ public class PomOperation {
             }
             OutputFormat outputFormat = OutputFormat.createPrettyPrint();
             outputFormat.setEncoding("UTF-8");
-            XMLWriter writer = new XMLWriter(new FileWriter(POM_PATH), outputFormat);
+            XMLWriter writer = new XMLWriter(new FileWriter(POM_PATH_COPY), outputFormat);
             writer.write(document);
             writer.close();
         } catch (Exception e) {
@@ -174,7 +174,7 @@ public class PomOperation {
     public boolean mvnTest() {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-        CommandLine  cmdLine = CommandLine.parse("mvn test");
+        CommandLine  cmdLine = CommandLine.parse("mvn test -f " + POM_PATH_COPY);
         DefaultExecutor executor = new DefaultExecutor();
         int exitCode = -1;
         try {

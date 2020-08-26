@@ -150,8 +150,6 @@ public class PrintCallGraph {
                 }
             }
         }
-        PomOperation.i().backupPomCopy();
-        PomOperation.i().deletePomCopy();
     }
 
     public boolean findRiskAPI() {
