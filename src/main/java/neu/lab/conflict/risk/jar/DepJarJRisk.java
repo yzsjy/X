@@ -576,11 +576,11 @@ public class DepJarJRisk {
         long startTime = System.currentTimeMillis();
         MavenUtil.i().setMojo(new CountProjectMojo());
         List<String> JarFilePath = new ArrayList<>();
-        JarFilePath.add(getRepositoryJarPath("com.google.inject", "guice", "4.1.0"));
-        DepJar usedDepJar = new DepJar("com.google.inject", "guice", "4.1.0", "", JarFilePath);
+        JarFilePath.add(getRepositoryJarPath("org.springframework", "spring-web", "5.1.12.RELEASE"));
+        DepJar usedDepJar = new DepJar("org.springframework", "spring-web", "5.1.12.RELEASE", "", JarFilePath);
         List<String> conflictJarFilePath = new ArrayList<>();
-        conflictJarFilePath.add(getRepositoryJarPath("com.google.inject", "guice", "2.0-no_aop"));
-        DepJar conflictDepJar = new DepJar("com.google.inject", "guice", "2.0-no_aop", "", conflictJarFilePath);
+        conflictJarFilePath.add(getRepositoryJarPath("org.springframework", "spring-web", "5.1.11.RELEASE"));
+        DepJar conflictDepJar = new DepJar("org.springframework", "spring-web", "5.1.11.RELEASE", "", conflictJarFilePath);
         DepJarJRisk depJarJRisk = new DepJarJRisk(conflictDepJar, usedDepJar);
         Map<String, List<Operation>> riskMethodDiffsMap = depJarJRisk.getAllSemantemeMethodForDifferences();
         System.out.println("risk method size : " + riskMethodDiffsMap.keySet().size());

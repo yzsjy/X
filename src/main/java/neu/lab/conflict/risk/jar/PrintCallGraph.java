@@ -111,7 +111,7 @@ public class PrintCallGraph {
 
     public void printRiskCallGraph() {
         findSemiMethods();
-        PomOperation.i().mvnTest();
+//        PomOperation.i().mvnTest();
         DependencyInfo dependencyInfo = new DependencyInfo(groupId, artifactId, changeVersion);
         generateTestClassPath(dependencyInfo);
         String classPaths = NodeAdapters.i().getNodeClassPath(groupId, artifactId, changeVersion);
@@ -326,7 +326,7 @@ public class PrintCallGraph {
                 MavenUtil.i().getLog().info("success add dependency for " + dependencyInfo.getName());
             }
 //            PomOperation.i().mvnPackage();
-            PomOperation.i().mvnTest();
+//            PomOperation.i().mvnTest();
         }
     }
 

@@ -386,7 +386,9 @@ public Set<String> getParentJarClassPath(boolean includeSelf) {
 		StringBuilder sb = new StringBuilder();
 		NodeAdapter father = getParent();
 		while (null != father) {
-			sb.insert(0, father.getFilePath().iterator().next() + File.pathSeparator);
+			if (!father.getFilePath().iterator().next().endsWith(".pom")) {
+				sb.insert(0, father.getFilePath().iterator().next() + File.pathSeparator);
+			}
 			father = father.getParent();
 		}
 		sb.insert(0, MavenUtil.i().getTestBuildDir().getAbsolutePath() + File.pathSeparator);
