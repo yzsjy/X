@@ -137,6 +137,22 @@ public class PomOperation {
         return true;
     }
 
+    public boolean backupFile(File srcFile, File tgtFile) {
+        if (tgtFile.exists()) {
+            tgtFile.delete();
+        }
+        MavenUtil.i().getLog().info("Backup the file which has risk jar");
+        try {
+            Files.copy(srcFile.toPath(), tgtFile.toPath());
+        } catch (IOException e) {
+            MavenUtil.i().getLog().error("Backup failed");
+            MavenUtil.i().getLog().error(e.getMessage());
+            return false;
+        }
+        MavenUtil.i().getLog().info("Backup success");
+        return true;
+    }
+
     public void backupPomCopy() {
         if (new File(POM_PATH).exists()) {
             new File(POM_PATH).delete();
@@ -171,6 +187,13 @@ public class PomOperation {
         MavenUtil.i().getLog().info("success delete pom-copy.xml");
     }
 
+    public void deleteFile(File file) {
+        if (file.exists()) {
+            file.delete();
+        }
+        MavenUtil.i().getLog().info("success delete xml file");
+    }
+
     public boolean mvnTest() {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
@@ -197,6 +220,21 @@ public class PomOperation {
             exitCode = executor.execute(cmdLine);
         } catch (IOException e) {
             MavenUtil.i().getLog().error("This project execute error : " + e.getMessage());
+        }
+        return exitCode == 0;
+    }
+
+    public boolean mvnRiskLevel(String resultPath) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+        CommandLine cmdLine = CommandLine.parse("mvn -f=" + POM_PATH_COPY + " -Dmaven.test.skip=true -DuseAllJar=false -DfilterSuper=true neu.lab:riddle:1.0:printRiskLevel -DresultPath=" + resultPath + " -e");
+        DefaultExecutor executor = new DefaultExecutor();
+        int exitCode = -1;
+        try {
+            executor.setStreamHandler(streamHandler);
+            exitCode = executor.execute(cmdLine);
+        } catch (IOException e) {
+            MavenUtil.i().getLog().error("Print Risk Level failed : " + e.getMessage());
         }
         return exitCode == 0;
     }

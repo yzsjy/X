@@ -20,13 +20,13 @@ public class ExcelWriter {
         CELL_HEADS.add("# Star");
         CELL_HEADS.add("# Dependencies");
         CELL_HEADS.add("The average number of releases of the projects' dependencies");
-        CELL_HEADS.add("# Test case");
         CELL_HEADS.add("GroupId");
         CELL_HEADS.add("ArtifactId");
         CELL_HEADS.add("Revised version");
         CELL_HEADS.add("Original version");
-        CELL_HEADS.add("Test case");
-        CELL_HEADS.add("Conflicting API");
+        CELL_HEADS.add("Conflict info");
+        CELL_HEADS.add("Conflict versions");
+        CELL_HEADS.add("File path");
     }
 
     public static Workbook exportData(ExcelDataVO data) {
@@ -105,8 +105,6 @@ public class ExcelWriter {
         cell = row.createCell(cellNum++);
         cell.setCellValue(data.getAvgNum());
         cell = row.createCell(cellNum++);
-        cell.setCellValue(data.getTestCase());
-        cell = row.createCell(cellNum++);
         cell.setCellValue(data.getGroupId());
         cell = row.createCell(cellNum++);
         cell.setCellValue(data.getArtifactId());
@@ -115,8 +113,10 @@ public class ExcelWriter {
         cell = row.createCell(cellNum++);
         cell.setCellValue(data.getOriginalVersion());
         cell = row.createCell(cellNum++);
-        cell.setCellValue(data.getTestAPI());
+        cell.setCellValue(data.getConflictInfo());
         cell = row.createCell(cellNum++);
-        cell.setCellValue(data.getRiskAPI());
+        cell.setCellValue(data.getConflictVersions());
+        cell = row.createCell(cellNum++);
+        cell.setCellValue(data.getFilePath());
     }
 }

@@ -13,6 +13,9 @@ public class ExcelDataVO {
     private String originalVersion;
     private String testAPI;
     private String riskAPI;
+    private String conflictInfo;
+    private String conflictVersions;
+    private String filePath;
 
     public ExcelDataVO(String projectName, int stars, int depNum, int avgNum, int testCase, String groupId, String artifactId, String changeVersion, String originalVersion, String testAPI, String riskAPI) {
         this.projectName = projectName;
@@ -26,6 +29,20 @@ public class ExcelDataVO {
         this.originalVersion = originalVersion;
         this.testAPI = testAPI;
         this.riskAPI = riskAPI;
+    }
+
+    public ExcelDataVO(String projectName, int stars, int depNum, int avgNum, String groupId, String artifactId, String changeVersion, String originalVersion, String conflictInfo, String conflictVersions, String filePath) {
+        this.projectName = projectName;
+        this.stars = stars;
+        this.depNum = depNum;
+        this.avgNum = avgNum;
+        this.groupId = groupId;
+        this.artifactId = artifactId;
+        this.changeVersion = changeVersion;
+        this.originalVersion = originalVersion;
+        this.conflictInfo = conflictInfo;
+        this.conflictVersions = conflictVersions;
+        this.filePath = filePath;
     }
 
     public String getProjectName() {
@@ -48,12 +65,24 @@ public class ExcelDataVO {
         return testCase;
     }
 
+    public String getFilePath() {
+        return filePath;
+    }
+
     public String getGroupId() {
         return groupId;
     }
 
     public String getArtifactId() {
         return artifactId;
+    }
+
+    public String getConflictInfo() {
+        return conflictInfo;
+    }
+
+    public String getConflictVersions() {
+        return conflictVersions;
     }
 
     public String getChangeVersion() {
